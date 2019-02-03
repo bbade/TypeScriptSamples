@@ -212,7 +212,7 @@ class RayTracer {
     }
 
     private getNaturalColor(thing: Thing, pos: Vector, norm: Vector, rd: Vector, scene: Scene) {
-        var addLight = (col, light) => {
+        var addLight = (col: Color, light: Light) => {
             var ldis = Vector.minus(light.pos, pos);
             var livec = Vector.norm(ldis);
             var neatIsect = this.testRay({ start: pos, dir: livec }, scene);
@@ -233,8 +233,25 @@ class RayTracer {
         return scene.lights.reduce(addLight, Color.defaultColor);
     }
 
-    render(scene, ctx, screenWidth, screenHeight) {
-        var getPoint = (x, y, camera) => {
+    render(scene: Scene, ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number) {
+        const outputImageData: ImageData =  ctx.createImageData(ctx.getImageData(0,0, screenWidth, screenHeight));
+        const pixels: Uint8ClampedArray = outputImageData.data;
+
+        for (let py = 0; py < screenHeight; py++) {
+            for (var px = 0; px < screenWidth; px++) {
+                drawOnArray(pixels, screenWidth, {r: 100, g:100, b:100}, px, py);
+            }
+            console.log("drew row" + py + "x " + px);
+        }
+
+        ctx.putImageData(outputImageData, 0, 0);
+        console.log("drew gray");
+        console.log(`imageData w ${outputImageData.width} h ${outputImageData.height}`);
+        // if (true) {
+        //     return;
+        // }
+
+        var getPoint = (x: number, y: number, camera: Camera) => {
             var recenterX = x =>(x - (screenWidth / 2.0)) / 2.0 / screenWidth;
             var recenterY = y => - (y - (screenHeight / 2.0)) / 2.0 / screenHeight;
             return Vector.norm(Vector.plus(camera.forward, Vector.plus(Vector.times(recenterX(x), camera.right), Vector.times(recenterY(y), camera.up))));
@@ -243,13 +260,30 @@ class RayTracer {
             for (var x = 0; x < screenWidth; x++) {
                 var color = this.traceRay({ start: scene.camera.pos, dir: getPoint(x, y, scene.camera) }, scene, 0);
                 var c = Color.toDrawingColor(color);
-                ctx.fillStyle = "rgb(" + String(c.r) + ", " + String(c.g) + ", " + String(c.b) + ")";
-                ctx.fillRect(x, y, x + 1, y + 1);
+                // drawOnCanvas(ctx, c, x, y);
+                drawOnArray(pixels, screenWidth, c, x, y);
             }
         }
+        ctx.putImageData(outputImageData, 0, 0);
+        console.log("drew render");
+
     }
 }
 
+function drawOnArray(arr: Uint8ClampedArray, imgWidth: number,  c: Color, x: number, y: number) {
+    const i = y * imgWidth * 4 + x*4;
+
+    // array is stored in rgba order
+    arr[i] = c.r;
+    arr[i+1] = c.g;
+    arr[i+2] = c.b;
+    arr[i+3] = 255; // a
+}
+
+function drawOnCanvas(ctx: CanvasRenderingContext2D, c: Color, x: number, y: number) {
+    ctx.fillStyle = "rgb(" + String(c.r) + ", " + String(c.g) + ", " + String(c.b) + ")";
+    ctx.fillRect(x, y, x + 1, y + 1);
+}
 
 function defaultScene(): Scene {
     return {
@@ -265,9 +299,9 @@ function defaultScene(): Scene {
 }
 
 function exec() {
-    var canv = document.createElement("canvas");
-    canv.width = 256;
-    canv.height = 256;
+    var canv: HTMLCanvasElement = document.createElement("canvas");
+    canv.width = 2900;
+    canv.height = 2900;
     document.body.appendChild(canv);
     var ctx = canv.getContext("2d");
     var rayTracer = new RayTracer();
