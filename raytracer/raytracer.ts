@@ -233,6 +233,13 @@ class RayTracer {
         return scene.lights.reduce(addLight, Color.defaultColor);
     }
 
+    // TODO: figure out how to use webworkers to split up the rendering. We will probably want to differentiate
+    // the image size from the viewport size.
+    // A renderer will probably need context like (imageSize, numRenderers, myNumber)
+    // also look up transfering object ownership, because we could set up the various
+    // byte arrays on the main thread first https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#Passing_data_by_transferring_ownership_(transferable_objects)
+    // https://developers.google.com/web/updates/2011/12/Transferable-Objects-Lightning-Fast
+    //
     render(scene: Scene, ctx: CanvasRenderingContext2D, screenWidth: number, screenHeight: number) {
         const outputImageData: ImageData =  ctx.createImageData(ctx.getImageData(0,0, screenWidth, screenHeight));
         const pixels: Uint8ClampedArray = outputImageData.data;
@@ -297,6 +304,7 @@ function defaultScene(): Scene {
         camera: new Camera(new Vector(3.0, 2.0, 4.0), new Vector(-1.0, 0.5, 0.0))
     };
 }
+
 
 function exec() {
     var canv: HTMLCanvasElement = document.createElement("canvas");
