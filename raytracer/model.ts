@@ -164,7 +164,12 @@ export module Surfaces {
  * Sent to webworkers
  */
 export class RenderRequest {
-    public readonly firstPixel: number;
+    public readonly firstPixel: number; // the index of the first pixel in the array
+    public readonly firstPixelX: number;
+    public readonly firstPixelY: number; 
+    public readonly firstByte: number;
+    public readonly totalPixels: number; // in this segment
+    public readonly totalBytes: number;
 
     constructor(
         public readonly scene: Scene, 
@@ -173,20 +178,21 @@ export class RenderRequest {
         public readonly workerIndex: number, 
         public readonly numWorkers: number) 
     {
-        const totalPixels = screenWidth * screenHeight;
-        const pixelsPerWorker = Math.floor(totalPixels / numWorkers);
+        const totalPixelsInImage = screenWidth * screenHeight;
+        const pixelsPerWorker = Math.floor(totalPixelsInImage / numWorkers);
 
-        this.firstPixel = workerIndex * pixelsPerWorker;
-    }
-}
+        this.firstPixel = workerIndex * pixelsPerWorker; // pixel index, not byte index
+        this.firstByte = this.firstPixel * 4;
+        
+        let npixels = pixelsPerWorker;
+        if (workerIndex == numWorkers - 1) {
+            npixels += (totalPixelsInImage - pixelsPerWorker*numWorkers);
+        }
 
-export class RenderResult {
-    constructor(
-        public readonly pixels: Uint8Array,
-        public readonly workerIndex: number,
-        public readonly firstPixelX: number,
-        public readonly firstPixelY: number
-    ) {
+        this.totalPixels = npixels;
+        this.totalBytes = npixels * 4;
 
+        this.firstPixelY = Math.floor(this.firstPixel / screenWidth);   // y = floor(p/w) ; x = p-yw
+        this.firstPixelX = this.firstPixel - this.firstPixelY * screenWidth;
     }
 }

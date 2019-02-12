@@ -95,7 +95,8 @@ export class RayTracer {
         const screenWidth = state.screenWidth;
         const screenHeight = state.screenHeight;
         const numWorkers = state.numWorkers;
-        const pixels: Uint8Array = makeOutputBuffer(state);
+        const pixels = new Uint8Array(state.totalBytes);
+        const scene = state.scene;
 
         var getPoint = (x: number, y: number, camera: Camera) => {
             var recenterX = x =>(x - (screenWidth / 2.0)) / 2.0 / screenWidth;
@@ -110,14 +111,13 @@ export class RayTracer {
                 drawOnArray(pixels, screenWidth, c, x, y);
             }
         }
-        ctx.putImageData(outputImageData, 0, 0);
         console.log("drew render");
             
         return pixels;
     }
 }
 
-function drawOnArray(arr: Uint8ClampedArray, imgWidth: number,  c: Color, x: number, y: number) {
+function drawOnArray(arr: Uint8Array, imgWidth: number,  c: Color, x: number, y: number) {
     const i = y * imgWidth * 4 + x*4;
 
     // array is stored in rgba order

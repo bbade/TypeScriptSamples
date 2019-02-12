@@ -27,9 +27,10 @@ function exec() {
     document.body.appendChild(canv);
     var ctx = canv.getContext("2d");
     const scene = defaultScene();
+    const outputImage = ctx.createImageData(canv.width, canv.height);
 
     for (let i = 0; i < config.numWorkers; i++) {
-        const message =  new RenderRequest(
+        const request = new RenderRequest(
             scene,
             config.width,
             config.height,
@@ -39,8 +40,24 @@ function exec() {
 
         const worker = new Worker("raytracer_worker.ts");
         worker.onmessage = function (event: MessageEvent) {
-            const data = event.data as RenderResult
+            onWorkerComplete(event.data, request, outputImage);
+            ctx.putImageData(outputImage, 0, 0);
         }
-        
+
+        worker.postMessage(request);
     }
+}
+
+/**
+ * 
+ * @param renderedPixels 
+ * @param request 
+ * @param outputImage  modifies outputImaeg.data
+ */
+function onWorkerComplete(renderedPixels: Uint8Array, request: RenderRequest, outputImage: ImageData) {
+    const b0 = 4 * (request.firstPixelY*request.screenWidth + request.firstPixelX);
+    for (let byte = b0; byte < renderedPixels.length; byte++) {
+        // TODO: this is slooowwwwwww
+        outputImage.data[b0 + byte] = renderedPixels[byte];
+    } 
 }
