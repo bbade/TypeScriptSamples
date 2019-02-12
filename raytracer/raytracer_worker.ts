@@ -10,7 +10,7 @@ import {
     Ray,
     Thing,
     Light,
-    RenderMessage
+    RenderRequest
 } from './model'
 
 export class RayTracer {
@@ -91,31 +91,11 @@ export class RayTracer {
     // byte arrays on the main thread first https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#Passing_data_by_transferring_ownership_(transferable_objects)
     // https://developers.google.com/web/updates/2011/12/Transferable-Objects-Lightning-Fast
     //
-    renderOnWorker(state: RenderMessage) {
+    renderOnWorker(state: RenderRequest): Uint8Array {
         const screenWidth = state.screenWidth;
         const screenHeight = state.screenHeight;
         const numWorkers = state.numWorkers;
-        const outputPixels: Uint8Array = makeOutputBuffer(state);
-
-        // split up the work into workers
-        const numPixels =  screenWidth * screenHeight;
-        const pixelsPerWorker = Math.floor(numPixels / numWorkers);
-        const remainder = numPixels - pixelsPerWorker;
-        const pixels: Uint8ClampedArray = output.data;
-
-        for (let py = 0; py < screenHeight; py++) {
-            for (var px = 0; px < screenWidth; px++) {
-                drawOnArray(pixels, screenWidth, {r: 100, g:100, b:100}, px, py);
-            }
-            console.log("drew row" + py + "x " + px);
-        }
-
-        ctx.putImageData(outputImageData, 0, 0);
-        console.log("drew gray");
-        console.log(`imageData w ${outputImageData.width} h ${outputImageData.height}`);
-        // if (true) {
-        //     return;
-        // }
+        const pixels: Uint8Array = makeOutputBuffer(state);
 
         var getPoint = (x: number, y: number, camera: Camera) => {
             var recenterX = x =>(x - (screenWidth / 2.0)) / 2.0 / screenWidth;
@@ -132,7 +112,8 @@ export class RayTracer {
         }
         ctx.putImageData(outputImageData, 0, 0);
         console.log("drew render");
-
+            
+        return pixels;
     }
 }
 
@@ -147,6 +128,11 @@ function drawOnArray(arr: Uint8ClampedArray, imgWidth: number,  c: Color, x: num
 }
 
 
-function makeOutputBuffer(state: RenderMessage) {
+function makeOutputBuffer(state: RenderRequest) {
 
+}
+
+onmessage = function(event: MessageEvent) {
+    const data: RenderRequest = event.data as RenderRequest
+    const pixels = new RayTracer().renderOnWorker(data);
 }

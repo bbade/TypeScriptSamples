@@ -163,7 +163,7 @@ export module Surfaces {
 /**
  * Sent to webworkers
  */
-export class RenderMessage {
+export class RenderRequest {
     public readonly firstPixel: number;
 
     constructor(
@@ -177,5 +177,16 @@ export class RenderMessage {
         const pixelsPerWorker = Math.floor(totalPixels / numWorkers);
 
         this.firstPixel = workerIndex * pixelsPerWorker;
+    }
+}
+
+export class RenderResult {
+    constructor(
+        public readonly pixels: Uint8Array,
+        public readonly workerIndex: number,
+        public readonly firstPixelX: number,
+        public readonly firstPixelY: number
+    ) {
+
     }
 }
